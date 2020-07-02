@@ -76,11 +76,6 @@ http_status_codes = {
 }
 
 
-class ReplayTransaction:
-    def __init__(self):
-        return
-
-
 class ReplaySession:
 
     tls_vers = {1.1: 'tls/1.1', 1.2: 'tls/1.2', 1.3: 'tls/1.3'}
@@ -97,6 +92,9 @@ class ReplaySession:
         return
 
     def random_populate(self, transaction_num, url_dict, http_trans, tls_trans, h2_trans):
+
+        # Grab a random url and strip out the hostname.
+        # Also need to make sure the url matches the protocols we allow.
         if not http_trans:
             while True:
                 if self.random_hostname(url_dict):
@@ -282,8 +280,12 @@ def remap_to_urls(remap_lines):
         if not l.startswith('map'):
             continue
         urls = l.split()
+
+        # For testing purposes only use maps that has the same scheme
+        # i.e. both http or both https
         if urls[1][4] == urls[-1][4]:
             url_dict[urls[1]] = urls[-1]
+
     return url_dict
 
 def parse_args():
