@@ -300,8 +300,8 @@ def remap_to_urls(remap_lines, no_ip):
 
         # For testing purposes only use maps that has the same scheme
         # i.e. both http or both https
-        hostname1, = ReplaySession.get_hostname_from_url(urls[1])
-        hostname2, = ReplaySession.get_hostname_from_url(urls[-1])
+        hostname1, _ = ReplaySession.get_hostname_from_url(urls[1])
+        hostname2, _ = ReplaySession.get_hostname_from_url(urls[-1])
         if re.match('[a-zA-Z0-9]', hostname1) is None or re.match('[a-zA-Z0-9]', hostname2) is None:
             continue
 
