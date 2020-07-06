@@ -227,8 +227,23 @@ class ReplaySession:
         else:
             hostname = url[7:]
 
-        hostname += '/'
-        hostname = hostname[:hostname.index('/')]
+        try:
+            term_idx1 = hostname.index(':')
+        except ValueError:
+            term_idx1 = -1
+
+        try:
+            term_idx2 = hostname.index('/')
+        except ValueError:
+            term_idx2 = -1
+
+        if term_idx1 == -1:
+            hostname = hostname[:term_idx2]
+        elif term_idx2 == -1:
+            hostname = hostname[:term_idx1]
+        else:
+            hostname = hostname[:term_idx1 if term_idx1 < term_idx2 else term_idx2]
+
         return hostname, is_tls
 
 
