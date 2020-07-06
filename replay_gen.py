@@ -8,6 +8,7 @@ import datetime
 import pathlib
 import shutil
 import copy
+import ipaddress
 
 http_status_codes = {
     100: 'Continue',
@@ -141,7 +142,7 @@ class ReplaySession:
 
     def random_hostname(self, url_dict):
         self.url = random.choice(list(url_dict.keys()))
-        self.hostname, is_tls = self.get_hostname_from_url(self.url, url_dict)
+        self.hostname, is_tls = self.get_hostname_from_url(self.url)
         return is_tls
 
     def random_tls_ver(self, h2_only):
@@ -217,15 +218,15 @@ class ReplaySession:
         transaction['proxy-response'] = transaction['server-response']
         return transaction
 
-    def get_hostname_from_url(self, url, url_dict):
+    @staticmethod
+    def get_hostname_from_url(url):
         is_tls = False
         if url[4] == 's':
             is_tls = True
             hostname = url[8:]
         else:
             hostname = url[7:]
-            if url_dict[url][4] == 's':
-                is_tls = True
+
         hostname += '/'
         hostname = hostname[:hostname.index('/')]
         return hostname, is_tls
@@ -273,7 +274,7 @@ class RepalyFile:
 
         return
 
-def remap_to_urls(remap_lines):
+def remap_to_urls(remap_lines, no_ip):
     url_dict = {}
     for l in remap_lines:
         l = l.strip()
@@ -284,7 +285,13 @@ def remap_to_urls(remap_lines):
         # For testing purposes only use maps that has the same scheme
         # i.e. both http or both https
         if urls[1][4] == urls[-1][4]:
-            url_dict[urls[1]] = urls[-1]
+            if no_ip:
+                try:
+                    ipaddress.ip_address(ReplaySession.get_hostname_from_url(urls[-1])[0])
+                except ValueError:
+                    url_dict[urls[1]] = urls[-1]
+            else:
+                url_dict[urls[1]] = urls[-1]
 
     return url_dict
 
@@ -299,6 +306,7 @@ def parse_args():
     parser.add_argument('-r', '--remap', dest='remap', type=argparse.FileType('r'), required=True, help='Path to the remap.config file.')
     parser.add_argument('-o', '--output', dest='output', type=str, default='replay', help='Path to a directory where the replay files are generated.')
     parser.add_argument('-p', '--prefix', dest='prefix', type=str, default='', help='Prefix for the replay file names.')
+    parser.add_argument('-nip', '--no-ip', dest='no_ip', action='store_true', help='Ignore ip address (in the "replacement" section) in the remap.config file.')
     return parser.parse_args()
 
 def main():
@@ -345,7 +353,7 @@ def main():
     pathlib.Path(args.output).mkdir(parents=True, exist_ok=True)
 
     remap_lines = args.remap.readlines()
-    url_dict = remap_to_urls(remap_lines)
+    url_dict = remap_to_urls(remap_lines, args.no_ip)
     args.remap.close()
 
     curr_trans_num = 0
