@@ -9,6 +9,7 @@ import pathlib
 import shutil
 import copy
 import ipaddress
+import re
 
 http_status_codes = {
     100: 'Continue',
@@ -299,10 +300,15 @@ def remap_to_urls(remap_lines, no_ip):
 
         # For testing purposes only use maps that has the same scheme
         # i.e. both http or both https
+        hostname1, = ReplaySession.get_hostname_from_url(urls[1])
+        hostname2, = ReplaySession.get_hostname_from_url(urls[-1])
+        if re.match('[a-zA-Z0-9]', hostname1) is None or re.match('[a-zA-Z0-9]', hostname2) is None:
+            continue
+
         if urls[1][4] == urls[-1][4]:
             if no_ip:
                 try:
-                    ipaddress.ip_address(ReplaySession.get_hostname_from_url(urls[-1])[0])
+                    ipaddress.ip_address(hostname2)
                 except ValueError:
                     url_dict[urls[1]] = urls[-1]
             else:
