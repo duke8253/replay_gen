@@ -178,15 +178,16 @@ class ReplaySession:
         transaction['client-request']['method'] = random.choice(['GET'])
         transaction['client-request']['url'] = self.url
 
-        request_size = random.randint(1, 100)
+        request_size = random.randint(1, 1000)
         req_headers = {}
         req_headers['encoding'] = 'esc_json'
         req_headers['fields'] = []
         req_headers['fields'].append(['Content-Length', str(request_size)])
-        req_headers['fields'].append(['Accept', 'application/json'])
+        #req_headers['fields'].append(['Accept', 'application/json'])
         # req_headers['fields'].append(['origin', transaction['client-request']['scheme'] + '://' + self.hostname])
         # req_headers['fields'].append(['Referer', transaction['client-request']['scheme'] + '://' + self.hostname])
         req_headers['fields'].append(['Host', self.hostname])
+        #req_headers['fields'].append(['Connection', 'close'])
 
         transaction['client-request']['headers'] = req_headers
 
@@ -201,14 +202,16 @@ class ReplaySession:
         transaction['server-response']['status'] = random.choice([200])
         transaction['server-response']['reason'] = http_status_codes[transaction['server-response']['status']]
 
-        response_size = random.randint(1, 100)
+        response_size = random.randint(1, 1000)
         res_headers = {}
         res_headers['encoding'] = 'esc_json'
         res_headers['fields'] = []
-        res_headers['fields'].append(['Content-Type', 'application/json'])
+        #res_headers['fields'].append(['Content-Type', 'application/json'])
         res_headers['fields'].append(['Content-Length', str(response_size)])
-        res_headers['fields'].append(['Connection', 'keep-alive'])
-        res_headers['fields'].append(['Server', 'ATS'])
+        res_headers['fields'].append(['Connection', random.choices(['close', 'keep-alive'], weights=[1, 10], k=1)[0]])
+        if res_headers['fields'][-1][-1] == 'keep-alive':
+            res_headers['fields'].append(['Keep-Alive', 'timeout=1, max=100'])
+        #res_headers['fields'].append(['Server', 'ATS'])
 
         transaction['server-response']['headers'] = res_headers
 
