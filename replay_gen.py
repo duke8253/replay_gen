@@ -80,15 +80,14 @@ http_status_codes = {
 
 class ReplaySession:
 
-    tls_vers = {1.1: 'tls/1.1', 1.2: 'tls/1.2', 1.3: 'tls/1.3'}
-    ip_vers = {4: 'ipv4', 6: 'ipv6'}
+    tls_vers = {1.1: 'TLSv1.1', 1.2: 'TLSv1.2', 1.3: 'TLSv1.3'}
 
     def __init__(self):
         self.url = ''
         self.hostname = ''
         self.tls_ver = 0
-        self.http_ver = 1
-        self.ip_ver = 4
+        self.http_ver = '1.1'
+        self.ip_ver = '4'
         self.session = {}
         self.transactions = []
         return
@@ -112,25 +111,20 @@ class ReplaySession:
 
         if h2_trans and self.tls_ver > 1.1:
             if not tls_trans:
-                self.http_ver = 2
+                self.http_ver = '2'
             else:
                 self.random_http_ver()
 
         self.session['protocol'] = []
-        if self.http_ver > 1:
-            self.session['protocol'].append('h2')
+        self.session['protocol'].append({'name': 'http', 'version': self.http_ver})
 
         if self.tls_ver > 0:
-            self.session['protocol'].append(self.tls_vers[self.tls_ver])
-            self.session['tls'] = {
-                'sni': self.hostname,
-                'verify_mode': '0'
-            }
+            self.session['protocol'].append({'name': 'tls', 'version': self.tls_vers[self.tls_ver], 'sni': self.hostname, 'proxy-verify-mode': 0, 'proxy-provided-cert': True})
 
-        self.session['protocol'].append('tcp')
+        self.session['protocol'].append({'name': 'tcp'})
 
         self.random_ip_ver()
-        self.session['protocol'].append(self.ip_vers[self.ip_ver])
+        self.session['protocol'].append({'name': 'ip', 'version': self.ip_ver})
 
         self.session['connection-time'] = int(datetime.datetime.utcnow().timestamp() * 1000000000)
 
@@ -154,11 +148,11 @@ class ReplaySession:
         return
 
     def random_http_ver(self):
-        self.http_ver = random.choice([1, 2])
+        self.http_ver = random.choice(['1.1', '2'])
         return
 
     def random_ip_ver(self):
-        self.ip_ver = random.choice([4, 6])
+        self.ip_ver = random.choice(['4', '6'])
         return
 
     def random_transaction(self):
